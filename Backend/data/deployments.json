@@ -1,0 +1,15 @@
+[
+  {
+    "id": "6b8bf398-fb7a-423a-95aa-795e5014a63f",
+    "status": "success",
+    "message": "Automated smoke test deployment",
+    "environment": "staging",
+    "branch": "main",
+    "commitHash": "verify123",
+    "author": "Codex",
+    "duration": 45,
+    "logs": "Verification request from local test.",
+    "source": "dashboard",
+    "timestamp": "2026-04-17T05:26:47.141Z"
+  }
+]

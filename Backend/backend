@@ -1,2 +1,0 @@
-init -y
-install express cors body-parser
