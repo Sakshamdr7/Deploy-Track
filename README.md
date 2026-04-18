@@ -26,8 +26,6 @@ Deploy-Track/
 |-- .github/
 |   `-- workflows/
 |       `-- node.js.yml
-`-- docs/
-    `-- FINAL_SCOPE.md
 ```
 
 ## Run Locally
@@ -65,3 +63,5 @@ npm start
 }
 ```
 
+## Project Goal:
+Deploy-Track aims to provide a centralized dashboard for monitoring CI/CD activity, deployment history, release status, and environment updates in a simple full-stack web application.
