@@ -65,6 +65,3 @@ npm start
 }
 ```
 
-## Build Roadmap
-
-The locked end-term scope and 12-day execution plan are documented in [docs/FINAL_SCOPE.md](./docs/FINAL_SCOPE.md).
