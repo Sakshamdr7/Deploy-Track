@@ -14,18 +14,20 @@ Deploy-Track is a web-based dashboard for monitoring CI/CD pipeline activity, de
 
 ```text
 Deploy-Track/
-├── Backend/
-│   ├── data/
-│   │   └── deployments.json
-│   ├── package.json
-│   └── server.js
-├── Frontend/
-│   ├── index.html
-│   ├── script.js
-│   └── style.css
-└── .github/
-    └── workflows/
-        └── node.js.yml
+|-- Backend/
+|   |-- data/
+|   |   `-- deployments.json
+|   |-- package.json
+|   `-- server.js
+|-- Frontend/
+|   |-- index.html
+|   |-- script.js
+|   `-- style.css
+|-- .github/
+|   `-- workflows/
+|       `-- node.js.yml
+`-- docs/
+    `-- FINAL_SCOPE.md
 ```
 
 ## Run Locally
@@ -62,3 +64,7 @@ npm start
   "logs": "Build passed. Container updated. Smoke checks passed."
 }
 ```
+
+## Build Roadmap
+
+The locked end-term scope and 12-day execution plan are documented in [docs/FINAL_SCOPE.md](./docs/FINAL_SCOPE.md).
