@@ -1,14 +1,36 @@
 # Deploy-Track
 
-Deploy-Track is a web-based dashboard for monitoring CI/CD pipeline activity, deployment history, release notes, and environment status for a minor project working model.
+## Project Overview
 
-## Current Working Model
+Deploy-Track is a full-stack web dashboard for monitoring CI/CD pipeline activity, deployment history, release status, and environment updates through a simple local working model.
 
-- Frontend dashboard for logging and viewing deployment events
+## Project Goal
+
+Deploy-Track aims to provide a centralized dashboard for tracking deployment events, viewing pipeline outcomes, storing release-related metadata, and improving visibility into software delivery workflows in a simple full-stack web application.
+
+## Key Features
+
+- Dashboard for logging and viewing deployment events
 - Backend API built with Express
-- File-backed persistent storage using JSON as a lightweight database
-- Summary cards for success, failed, running, and total deployments
-- Deployment details including branch, environment, author, commit hash, duration, and logs
+- Persistent local storage using JSON as a lightweight database
+- Summary cards for total, successful, failed, and running deployments
+- Deployment metadata including branch, environment, author, commit hash, duration, and logs
+- GitHub Actions workflow for project validation
+
+## Tech Stack
+
+- Frontend: HTML, CSS, JavaScript
+- Backend: Node.js, Express
+- Storage: JSON-based local persistence
+- CI/CD: GitHub Actions
+
+## How It Works
+
+1. The user opens the dashboard locally in the browser.
+2. The frontend sends deployment data to the backend API.
+3. The backend validates and stores the deployment record.
+4. The dashboard fetches updated deployment history and statistics.
+5. The latest deployment state is shown in the UI with status and logs.
 
 ## Project Structure
 
@@ -26,6 +48,8 @@ Deploy-Track/
 |-- .github/
 |   `-- workflows/
 |       `-- node.js.yml
+`-- docs/
+    `-- FINAL_SCOPE.md
 ```
 
 ## Run Locally
@@ -63,5 +87,10 @@ npm start
 }
 ```
 
-## Project Goal:
-Deploy-Track aims to provide a centralized dashboard for monitoring CI/CD activity, deployment history, release status, and environment updates in a simple full-stack web application.
+## Future Enhancements
+
+- Add filtering and search for deployment history
+- Add deployment detail modal or side panel
+- Replace JSON persistence with MongoDB
+- Improve CI/CD integration for automatic deployment event creation
+- Add screenshots and architecture diagrams for project presentation
