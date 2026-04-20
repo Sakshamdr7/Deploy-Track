@@ -4,6 +4,7 @@ const {
     getDeployments,
     getDeploymentStats,
     createDeployment,
+    queryDeployments,
 } = require("../services/deploymentService");
 
 const router = express.Router();
@@ -20,11 +21,12 @@ router.get("/health", async (req, res) => {
 
 router.get("/deployments", async (req, res) => {
     try {
-        const deployments = await getDeployments();
+        const result = await queryDeployments(req.query);
 
         return res.json({
-            count: deployments.length,
-            deployments,
+            count: result.deployments.length,
+            filters: result.filters,
+            deployments: result.deployments,
         });
     } catch (error) {
         return res.status(500).json({
