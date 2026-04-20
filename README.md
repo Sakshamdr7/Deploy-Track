@@ -72,6 +72,23 @@ npm start
 - `GET /api/stats`
 - `POST /api/deployments`
 
+### Deployment Query Parameters
+
+The `GET /api/deployments` endpoint supports optional query parameters:
+
+- `status=success|failed|running`
+- `environment=development|staging|production`
+- `branch=<branch-name>`
+- `source=dashboard|github-actions`
+- `search=<text>`
+- `sort=latest|oldest`
+
+Example:
+
+```text
+/api/deployments?status=success&environment=production&sort=latest
+```
+
 ## Sample Deployment Payload
 
 ```json
