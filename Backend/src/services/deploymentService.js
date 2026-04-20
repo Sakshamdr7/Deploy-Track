@@ -6,6 +6,7 @@ const {
 } = require("../storage/deploymentStorage");
 
 const VALID_STATUSES = new Set(["success", "failed", "running"]);
+const VALID_SORT_ORDERS = new Set(["latest", "oldest"]);
 
 function buildStats(deployments) {
     const stats = {
@@ -58,6 +59,68 @@ async function getDeployments() {
     return readDeployments();
 }
 
+function normalizeDeploymentQuery(query = {}) {
+    const status = String(query.status || "").trim().toLowerCase();
+    const environment = String(query.environment || "").trim().toLowerCase();
+    const branch = String(query.branch || "").trim().toLowerCase();
+    const source = String(query.source || "").trim().toLowerCase();
+    const search = String(query.search || "").trim().toLowerCase();
+    const sort = String(query.sort || "latest").trim().toLowerCase();
+
+    return {
+        status: VALID_STATUSES.has(status) ? status : "",
+        environment,
+        branch,
+        source,
+        search,
+        sort: VALID_SORT_ORDERS.has(sort) ? sort : "latest",
+    };
+}
+
+function applyDeploymentFilters(deployments, query = {}) {
+    const normalizedQuery = normalizeDeploymentQuery(query);
+
+    const filteredDeployments = deployments.filter((deployment) => {
+        const statusMatch = !normalizedQuery.status || deployment.status === normalizedQuery.status;
+        const environmentMatch = !normalizedQuery.environment
+            || String(deployment.environment || "").toLowerCase() === normalizedQuery.environment;
+        const branchMatch = !normalizedQuery.branch
+            || String(deployment.branch || "").toLowerCase().includes(normalizedQuery.branch);
+        const sourceMatch = !normalizedQuery.source
+            || String(deployment.source || "").toLowerCase() === normalizedQuery.source;
+        const searchTarget = [
+            deployment.message,
+            deployment.commitHash,
+            deployment.author,
+            deployment.logs,
+        ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+        const searchMatch = !normalizedQuery.search || searchTarget.includes(normalizedQuery.search);
+
+        return statusMatch && environmentMatch && branchMatch && sourceMatch && searchMatch;
+    });
+
+    filteredDeployments.sort((a, b) => {
+        const left = new Date(a.timestamp).getTime();
+        const right = new Date(b.timestamp).getTime();
+
+        return normalizedQuery.sort === "oldest" ? left - right : right - left;
+    });
+
+    return {
+        filters: normalizedQuery,
+        deployments: filteredDeployments,
+    };
+}
+
+async function queryDeployments(query = {}) {
+    const deployments = await readDeployments();
+
+    return applyDeploymentFilters(deployments, query);
+}
+
 async function getDeploymentStats() {
     const deployments = await readDeployments();
 
@@ -86,9 +149,12 @@ async function createDeployment(payload) {
 }
 
 module.exports = {
+    applyDeploymentFilters,
     buildStats,
+    normalizeDeploymentQuery,
     normalizeDeploymentPayload,
     getDeployments,
     getDeploymentStats,
     createDeployment,
+    queryDeployments,
 };
