@@ -10,7 +10,7 @@ Deploy-Track aims to provide a centralized dashboard for tracking deployment eve
 
 ## Key Features
 
-- Dashboard for logging and viewing deployment events
+- Multi-view dashboard with navigation for Dashboard, Deployments, Add Deployment, System Status, and About Project
 - Backend API built with Express
 - Persistent local storage using JSON as a lightweight database
 - Summary cards for total, successful, failed, and running deployments
