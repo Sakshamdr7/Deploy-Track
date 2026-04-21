@@ -7,125 +7,257 @@
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-    <main class="page-shell">
-        <section class="hero">
-            <div>
+    <main class="app-shell">
+        <aside class="sidebar card">
+            <div class="brand-block">
                 <p class="eyebrow">DevOps Minor Project</p>
-                <h1>Deploy Track Dashboard</h1>
-                <p class="hero-copy">
-                    A web-based monitoring dashboard for CI/CD activity, deployment history, release notes, and environment status.
+                <h1>Deploy Track</h1>
+                <p class="sidebar-copy">
+                    CI/CD monitoring dashboard for deployments, release activity, and environment visibility.
                 </p>
             </div>
 
-            <div class="hero-status card">
-                <p class="hero-label">System status</p>
+            <nav class="sidebar-nav" aria-label="Primary">
+                <button class="nav-button active" data-view-target="dashboard-view" type="button">Dashboard</button>
+                <button class="nav-button" data-view-target="deployments-view" type="button">Deployments</button>
+                <button class="nav-button" data-view-target="add-deployment-view" type="button">Add Deployment</button>
+                <button class="nav-button" data-view-target="system-status-view" type="button">System Status</button>
+                <button class="nav-button" data-view-target="about-view" type="button">About Project</button>
+            </nav>
+
+            <section class="sidebar-footer card inset-card">
+                <p class="section-kicker">Live backend</p>
                 <h2 id="health-message">Checking backend...</h2>
                 <p class="hero-meta" id="health-meta">Waiting for API response</p>
-            </div>
-        </section>
+            </section>
+        </aside>
 
-        <section class="stats-grid">
-            <article class="stat-card card">
-                <p class="stat-label">Total deployments</p>
-                <h3 id="total-count">0</h3>
-            </article>
-            <article class="stat-card card">
-                <p class="stat-label">Successful</p>
-                <h3 id="success-count">0</h3>
-            </article>
-            <article class="stat-card card">
-                <p class="stat-label">Failed</p>
-                <h3 id="failed-count">0</h3>
-            </article>
-            <article class="stat-card card">
-                <p class="stat-label">Running</p>
-                <h3 id="running-count">0</h3>
-            </article>
-        </section>
-
-        <section class="dashboard-grid">
-            <article class="card panel form-panel">
-                <div class="panel-heading">
-                    <div>
-                        <p class="section-kicker">Input</p>
-                        <h2>Log Deployment Event</h2>
-                    </div>
-                    <p class="panel-copy">Use this form to simulate a CI/CD pipeline update or manual release entry.</p>
+        <section class="content-shell">
+            <header class="page-header card">
+                <div>
+                    <p class="section-kicker">Full-Stack Working Model</p>
+                    <h2 id="page-title">Dashboard</h2>
+                    <p class="page-copy" id="page-description">
+                        Monitor deployment health, recent activity, and current release progress from one place.
+                    </p>
                 </div>
+                <button id="refresh-button" type="button" class="ghost-button">Refresh Data</button>
+            </header>
 
-                <div id="feedback" class="feedback" hidden></div>
-
-                <form id="deployment-form" class="deployment-form">
-                    <label>
-                        <span>Status</span>
-                        <select name="status" required>
-                            <option value="success">Success</option>
-                            <option value="failed">Failed</option>
-                            <option value="running">Running</option>
-                        </select>
-                    </label>
-
-                    <label>
-                        <span>Environment</span>
-                        <select name="environment" required>
-                            <option value="development">Development</option>
-                            <option value="staging">Staging</option>
-                            <option value="production">Production</option>
-                        </select>
-                    </label>
-
-                    <label>
-                        <span>Branch</span>
-                        <input type="text" name="branch" placeholder="main" value="main" required>
-                    </label>
-
-                    <label>
-                        <span>Commit Hash</span>
-                        <input type="text" name="commitHash" placeholder="a1b2c3d">
-                    </label>
-
-                    <label>
-                        <span>Author</span>
-                        <input type="text" name="author" placeholder="Saksham">
-                    </label>
-
-                    <label>
-                        <span>Duration (seconds)</span>
-                        <input type="number" name="duration" min="1" placeholder="120">
-                    </label>
-
-                    <label class="full-width">
-                        <span>Deployment Message</span>
-                        <textarea
-                            name="message"
-                            placeholder="Production deployment completed from main branch"
-                            required
-                        ></textarea>
-                    </label>
-
-                    <label class="full-width">
-                        <span>Logs / Notes</span>
-                        <textarea
-                            name="logs"
-                            placeholder="Build passed, image pushed, deployment verified."
-                        ></textarea>
-                    </label>
-
-                    <button type="submit">Save Deployment</button>
-                </form>
-            </article>
-
-            <article class="card panel history-panel">
-                <div class="panel-heading inline-heading">
-                    <div>
-                        <p class="section-kicker">Output</p>
-                        <h2>Deployment History</h2>
+            <section class="view-stack">
+                <section class="view-section active" id="dashboard-view">
+                    <div class="stats-grid">
+                        <article class="stat-card card">
+                            <p class="stat-label">Total deployments</p>
+                            <h3 id="total-count">0</h3>
+                        </article>
+                        <article class="stat-card card">
+                            <p class="stat-label">Successful</p>
+                            <h3 id="success-count">0</h3>
+                        </article>
+                        <article class="stat-card card">
+                            <p class="stat-label">Failed</p>
+                            <h3 id="failed-count">0</h3>
+                        </article>
+                        <article class="stat-card card">
+                            <p class="stat-label">Running</p>
+                            <h3 id="running-count">0</h3>
+                        </article>
                     </div>
-                    <button id="refresh-button" type="button" class="ghost-button">Refresh</button>
-                </div>
 
-                <div id="deployment-list" class="history-list"></div>
-            </article>
+                    <div class="dashboard-grid">
+                        <article class="card panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="section-kicker">Overview</p>
+                                    <h2>Latest Deployment</h2>
+                                </div>
+                                <p class="panel-copy">The most recent deployment event from the current release timeline.</p>
+                            </div>
+
+                            <div id="latest-deployment" class="latest-deployment"></div>
+                        </article>
+
+                        <article class="card panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="section-kicker">Recent Activity</p>
+                                    <h2>Recent Deployment Stream</h2>
+                                </div>
+                                <p class="panel-copy">A quick view of the newest deployment events across environments.</p>
+                            </div>
+
+                            <div id="recent-activity" class="history-list compact-list"></div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="view-section" id="deployments-view">
+                    <article class="card panel">
+                        <div class="panel-heading">
+                            <div>
+                                <p class="section-kicker">Records</p>
+                                <h2>Deployment History</h2>
+                            </div>
+                            <p class="panel-copy">Full record list for deployment events, release notes, and environment changes.</p>
+                        </div>
+
+                        <div id="deployment-list" class="history-list"></div>
+                    </article>
+                </section>
+
+                <section class="view-section" id="add-deployment-view">
+                    <article class="card panel form-panel">
+                        <div class="panel-heading">
+                            <div>
+                                <p class="section-kicker">Input</p>
+                                <h2>Log Deployment Event</h2>
+                            </div>
+                            <p class="panel-copy">Use this form to simulate a CI/CD pipeline update or manual release entry.</p>
+                        </div>
+
+                        <div id="feedback" class="feedback" hidden></div>
+
+                        <form id="deployment-form" class="deployment-form">
+                            <label>
+                                <span>Status</span>
+                                <select name="status" required>
+                                    <option value="success">Success</option>
+                                    <option value="failed">Failed</option>
+                                    <option value="running">Running</option>
+                                </select>
+                            </label>
+
+                            <label>
+                                <span>Environment</span>
+                                <select name="environment" required>
+                                    <option value="development">Development</option>
+                                    <option value="staging">Staging</option>
+                                    <option value="production">Production</option>
+                                </select>
+                            </label>
+
+                            <label>
+                                <span>Branch</span>
+                                <input type="text" name="branch" placeholder="main" value="main" required>
+                            </label>
+
+                            <label>
+                                <span>Commit Hash</span>
+                                <input type="text" name="commitHash" placeholder="a1b2c3d">
+                            </label>
+
+                            <label>
+                                <span>Author</span>
+                                <input type="text" name="author" placeholder="Saksham">
+                            </label>
+
+                            <label>
+                                <span>Duration (seconds)</span>
+                                <input type="number" name="duration" min="1" placeholder="120">
+                            </label>
+
+                            <label class="full-width">
+                                <span>Deployment Message</span>
+                                <textarea
+                                    name="message"
+                                    placeholder="Production deployment completed from main branch"
+                                    required
+                                ></textarea>
+                            </label>
+
+                            <label class="full-width">
+                                <span>Logs / Notes</span>
+                                <textarea
+                                    name="logs"
+                                    placeholder="Build passed, image pushed, deployment verified."
+                                ></textarea>
+                            </label>
+
+                            <button type="submit">Save Deployment</button>
+                        </form>
+                    </article>
+                </section>
+
+                <section class="view-section" id="system-status-view">
+                    <div class="status-grid">
+                        <article class="card panel">
+                            <p class="section-kicker">Backend</p>
+                            <h2>Service Health</h2>
+                            <p class="status-big" id="status-health-text">Checking...</p>
+                            <p class="panel-copy" id="status-storage-text">Waiting for API response</p>
+                        </article>
+
+                        <article class="card panel">
+                            <p class="section-kicker">Storage</p>
+                            <h2>Deployment Records</h2>
+                            <p class="status-big" id="status-total-text">0</p>
+                            <p class="panel-copy">Current deployment entries stored for the working model.</p>
+                        </article>
+
+                        <article class="card panel">
+                            <p class="section-kicker">Latest Source</p>
+                            <h2>Recent Delivery Channel</h2>
+                            <p class="status-big" id="status-source-text">Unknown</p>
+                            <p class="panel-copy" id="status-source-meta">No recent deployment available yet.</p>
+                        </article>
+                    </div>
+
+                    <article class="card panel">
+                        <div class="panel-heading">
+                            <div>
+                                <p class="section-kicker">Logs</p>
+                                <h2>Latest Deployment Notes</h2>
+                            </div>
+                            <p class="panel-copy">The newest deployment logs and notes captured in the current working model.</p>
+                        </div>
+
+                        <div id="status-log-panel" class="log-panel"></div>
+                    </article>
+                </section>
+
+                <section class="view-section" id="about-view">
+                    <article class="card panel about-panel">
+                        <div class="panel-heading">
+                            <div>
+                                <p class="section-kicker">Project Summary</p>
+                                <h2>About Deploy-Track</h2>
+                            </div>
+                            <p class="panel-copy">A concise explanation of the project, its purpose, and the system flow for the end-term demo.</p>
+                        </div>
+
+                        <div class="about-grid">
+                            <section class="about-block">
+                                <h3>Purpose</h3>
+                                <p>
+                                    Deploy-Track is built to monitor CI/CD activity, deployment records, and environment updates in one dashboard for a full-stack DevOps-focused minor project.
+                                </p>
+                            </section>
+
+                            <section class="about-block">
+                                <h3>Core Workflow</h3>
+                                <p>
+                                    Deployment events are created from the dashboard or CI pipeline, sent to the backend API, stored in persistent local storage, and rendered back into the frontend as activity and stats.
+                                </p>
+                            </section>
+
+                            <section class="about-block">
+                                <h3>Tech Stack</h3>
+                                <p>
+                                    Frontend uses HTML, CSS, and JavaScript. Backend uses Node.js and Express. Current persistence is JSON-based local storage, with CI handled through GitHub Actions.
+                                </p>
+                            </section>
+
+                            <section class="about-block">
+                                <h3>End-Term Goal</h3>
+                                <p>
+                                    Present a polished local website that looks like a real CI/CD monitoring product, with structured frontend navigation, backend API support, deployment history, and system status visibility.
+                                </p>
+                            </section>
+                        </div>
+                    </article>
+                </section>
+            </section>
         </section>
     </main>
 
