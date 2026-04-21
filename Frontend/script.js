@@ -1,5 +1,8 @@
 const deploymentForm = document.getElementById("deployment-form");
 const deploymentList = document.getElementById("deployment-list");
+const recentActivity = document.getElementById("recent-activity");
+const latestDeploymentPanel = document.getElementById("latest-deployment");
+const statusLogPanel = document.getElementById("status-log-panel");
 const feedback = document.getElementById("feedback");
 const refreshButton = document.getElementById("refresh-button");
 
@@ -9,6 +12,43 @@ const failedCount = document.getElementById("failed-count");
 const runningCount = document.getElementById("running-count");
 const healthMessage = document.getElementById("health-message");
 const healthMeta = document.getElementById("health-meta");
+const pageTitle = document.getElementById("page-title");
+const pageDescription = document.getElementById("page-description");
+const statusHealthText = document.getElementById("status-health-text");
+const statusStorageText = document.getElementById("status-storage-text");
+const statusTotalText = document.getElementById("status-total-text");
+const statusSourceText = document.getElementById("status-source-text");
+const statusSourceMeta = document.getElementById("status-source-meta");
+
+const navButtons = document.querySelectorAll("[data-view-target]");
+const viewSections = document.querySelectorAll(".view-section");
+
+const viewMeta = {
+    "dashboard-view": {
+        title: "Dashboard",
+        description: "Monitor deployment health, recent activity, and current release progress from one place.",
+    },
+    "deployments-view": {
+        title: "Deployments",
+        description: "Browse the full deployment history and release records for the working model.",
+    },
+    "add-deployment-view": {
+        title: "Add Deployment",
+        description: "Create a new deployment event to simulate CI/CD or manual release activity.",
+    },
+    "system-status-view": {
+        title: "System Status",
+        description: "Check backend health, storage status, and the latest deployment notes.",
+    },
+    "about-view": {
+        title: "About Project",
+        description: "Review the goal, workflow, and technical direction of Deploy-Track.",
+    },
+};
+
+let latestHealthData = null;
+let latestStatsData = null;
+let latestDeployments = [];
 
 function showFeedback(message, type) {
     feedback.hidden = false;
@@ -33,38 +73,97 @@ function renderStats(stats) {
     runningCount.textContent = stats.running ?? 0;
 }
 
-function renderDeployments(deployments) {
+function createDeploymentCard(deployment) {
+    const durationText = deployment.duration ? `${deployment.duration}s` : "Not recorded";
+    const logs = deployment.logs
+        ? `<p class="log-text">${deployment.logs}</p>`
+        : '<p class="log-text">No deployment notes were attached to this event.</p>';
+
+    return `
+        <article class="history-item">
+            <div class="item-top">
+                <span class="badge ${deployment.status}">${deployment.status}</span>
+                <span class="item-meta">${formatTimestamp(deployment.timestamp)}</span>
+            </div>
+            <div class="item-tags">
+                <span class="tag">${deployment.environment}</span>
+                <span class="tag">${deployment.branch}</span>
+                <span class="tag">${deployment.author}</span>
+                <span class="tag">${durationText}</span>
+            </div>
+            <p class="item-message">${deployment.message}</p>
+            <p class="item-meta">Commit: ${deployment.commitHash}</p>
+            ${logs}
+        </article>
+    `;
+}
+
+function renderDeploymentHistory(deployments) {
     if (!deployments.length) {
-        deploymentList.innerHTML = '<div class="empty-state">No deployment records yet. Add one from the form to start the working model.</div>';
+        deploymentList.innerHTML = '<div class="empty-state">No deployment records yet. Add one from the Add Deployment page to start the working model.</div>';
+        recentActivity.innerHTML = '<div class="empty-state">No recent activity yet.</div>';
+        latestDeploymentPanel.innerHTML = '<div class="empty-state">No latest deployment available yet.</div>';
+        statusLogPanel.innerHTML = '<div class="empty-state">No deployment logs are available yet.</div>';
         return;
     }
 
-    deploymentList.innerHTML = deployments
-        .map((deployment) => {
-            const durationText = deployment.duration ? `${deployment.duration}s` : "Not recorded";
-            const logs = deployment.logs
-                ? `<p class="log-text">${deployment.logs}</p>`
-                : '<p class="log-text">No deployment notes were attached to this event.</p>';
+    deploymentList.innerHTML = deployments.map(createDeploymentCard).join("");
+    recentActivity.innerHTML = deployments.slice(0, 3).map(createDeploymentCard).join("");
 
-            return `
-                <article class="history-item">
-                    <div class="item-top">
-                        <span class="badge ${deployment.status}">${deployment.status}</span>
-                        <span class="item-meta">${formatTimestamp(deployment.timestamp)}</span>
-                    </div>
-                    <div class="item-tags">
-                        <span class="tag">${deployment.environment}</span>
-                        <span class="tag">${deployment.branch}</span>
-                        <span class="tag">${deployment.author}</span>
-                        <span class="tag">${durationText}</span>
-                    </div>
-                    <p class="item-message">${deployment.message}</p>
-                    <p class="item-meta">Commit: ${deployment.commitHash}</p>
-                    ${logs}
-                </article>
-            `;
-        })
-        .join("");
+    const latestDeployment = deployments[0];
+    latestDeploymentPanel.innerHTML = `
+        <article class="latest-card">
+            <div class="item-top">
+                <span class="badge ${latestDeployment.status}">${latestDeployment.status}</span>
+                <span class="item-meta">${formatTimestamp(latestDeployment.timestamp)}</span>
+            </div>
+            <p class="item-message">${latestDeployment.message}</p>
+            <div class="item-tags">
+                <span class="tag">${latestDeployment.environment}</span>
+                <span class="tag">${latestDeployment.branch}</span>
+                <span class="tag">${latestDeployment.author}</span>
+                <span class="tag">${latestDeployment.source}</span>
+            </div>
+            <p class="log-text">${latestDeployment.logs || "No deployment notes were attached to this event."}</p>
+        </article>
+    `;
+
+    statusLogPanel.innerHTML = `
+        <article class="latest-card">
+            <p class="item-meta">Latest deployment from ${latestDeployment.source} at ${formatTimestamp(latestDeployment.timestamp)}</p>
+            <p class="item-message">${latestDeployment.message}</p>
+            <p class="log-text">${latestDeployment.logs || "No deployment notes were attached to this event."}</p>
+        </article>
+    `;
+}
+
+function renderStatusPanel() {
+    if (!latestHealthData || !latestStatsData) {
+        return;
+    }
+
+    const latestDeployment = latestStatsData.latestDeployment;
+
+    statusHealthText.textContent = latestHealthData.message;
+    statusStorageText.textContent = `${latestHealthData.totalDeployments} records stored in ${latestHealthData.storage}`;
+    statusTotalText.textContent = latestStatsData.total ?? 0;
+    statusSourceText.textContent = latestDeployment ? latestDeployment.source : "Unknown";
+    statusSourceMeta.textContent = latestDeployment
+        ? `${latestDeployment.environment} deployment from branch ${latestDeployment.branch}`
+        : "No recent deployment available yet.";
+}
+
+function activateView(viewId) {
+    navButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.viewTarget === viewId);
+    });
+
+    viewSections.forEach((section) => {
+        section.classList.toggle("active", section.id === viewId);
+    });
+
+    pageTitle.textContent = viewMeta[viewId].title;
+    pageDescription.textContent = viewMeta[viewId].description;
 }
 
 async function loadHealth() {
@@ -76,6 +175,7 @@ async function loadHealth() {
         }
 
         const data = await response.json();
+        latestHealthData = data;
         healthMessage.textContent = data.message;
         healthMeta.textContent = `${data.totalDeployments} deployment records stored in ${data.storage}`;
     } catch (error) {
@@ -84,7 +184,7 @@ async function loadHealth() {
     }
 }
 
-async function loadDashboard() {
+async function loadDashboardData() {
     try {
         const [statsResponse, deploymentsResponse] = await Promise.all([
             fetch("/api/stats"),
@@ -98,12 +198,27 @@ async function loadDashboard() {
         const statsData = await statsResponse.json();
         const deploymentData = await deploymentsResponse.json();
 
-        renderStats(statsData.stats || {});
-        renderDeployments(deploymentData.deployments || []);
+        latestStatsData = statsData.stats || {};
+        latestDeployments = deploymentData.deployments || [];
+
+        renderStats(latestStatsData);
+        renderDeploymentHistory(latestDeployments);
+        renderStatusPanel();
     } catch (error) {
         showFeedback(error.message, "error");
     }
 }
+
+async function refreshAllData() {
+    clearFeedback();
+    await Promise.all([loadHealth(), loadDashboardData()]);
+}
+
+navButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+        activateView(button.dataset.viewTarget);
+    });
+});
 
 deploymentForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -141,15 +256,14 @@ deploymentForm.addEventListener("submit", async (event) => {
         deploymentForm.elements.branch.value = "main";
         showFeedback("Deployment saved successfully.", "success");
 
-        await Promise.all([loadHealth(), loadDashboard()]);
+        await refreshAllData();
+        activateView("deployments-view");
     } catch (error) {
         showFeedback(error.message, "error");
     }
 });
 
-refreshButton.addEventListener("click", async () => {
-    clearFeedback();
-    await Promise.all([loadHealth(), loadDashboard()]);
-});
+refreshButton.addEventListener("click", refreshAllData);
 
-Promise.all([loadHealth(), loadDashboard()]);
+activateView("dashboard-view");
+refreshAllData();
