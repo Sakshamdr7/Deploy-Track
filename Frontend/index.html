@@ -21,6 +21,7 @@
                 <button class="nav-button active" data-view-target="dashboard-view" type="button">Dashboard</button>
                 <button class="nav-button" data-view-target="deployments-view" type="button">Deployments</button>
                 <button class="nav-button" data-view-target="add-deployment-view" type="button">Add Deployment</button>
+                <button class="nav-button" data-view-target="projects-view" type="button">Projects</button>
                 <button class="nav-button" data-view-target="system-status-view" type="button">System Status</button>
                 <button class="nav-button" data-view-target="about-view" type="button">About Project</button>
             </nav>
@@ -102,6 +103,48 @@
                             <p class="panel-copy">Full record list for deployment events, release notes, and environment changes.</p>
                         </div>
 
+                        <form id="deployment-filter-form" class="filter-toolbar">
+                            <label>
+                                <span>Search</span>
+                                <input id="search-input" type="search" name="search" placeholder="Search by message, commit, author, or log">
+                            </label>
+
+                            <label>
+                                <span>Project</span>
+                                <select id="project-filter" name="project">
+                                    <option value="">All Projects</option>
+                                </select>
+                            </label>
+
+                            <label>
+                                <span>Status</span>
+                                <select id="status-filter" name="status">
+                                    <option value="">All Statuses</option>
+                                    <option value="success">Success</option>
+                                    <option value="failed">Failed</option>
+                                    <option value="running">Running</option>
+                                </select>
+                            </label>
+
+                            <label>
+                                <span>Environment</span>
+                                <select id="environment-filter" name="environment">
+                                    <option value="">All Environments</option>
+                                    <option value="development">Development</option>
+                                    <option value="staging">Staging</option>
+                                    <option value="production">Production</option>
+                                </select>
+                            </label>
+
+                            <label>
+                                <span>Sort</span>
+                                <select id="sort-filter" name="sort">
+                                    <option value="latest">Latest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                </select>
+                            </label>
+                        </form>
+
                         <div id="deployment-list" class="history-list"></div>
                     </article>
                 </section>
@@ -119,6 +162,11 @@
                         <div id="feedback" class="feedback" hidden></div>
 
                         <form id="deployment-form" class="deployment-form">
+                            <label>
+                                <span>Project / Website</span>
+                                <input type="text" name="project" placeholder="Deploy Track" value="Deploy Track" required>
+                            </label>
+
                             <label>
                                 <span>Status</span>
                                 <select name="status" required>
@@ -176,6 +224,20 @@
 
                             <button type="submit">Save Deployment</button>
                         </form>
+                    </article>
+                </section>
+
+                <section class="view-section" id="projects-view">
+                    <article class="card panel">
+                        <div class="panel-heading">
+                            <div>
+                                <p class="section-kicker">Websites</p>
+                                <h2>Project Classification</h2>
+                            </div>
+                            <p class="panel-copy">Group deployment activity by website or product so one dashboard can track many projects.</p>
+                        </div>
+
+                        <div id="project-summary-list" class="project-grid"></div>
                     </article>
                 </section>
 
