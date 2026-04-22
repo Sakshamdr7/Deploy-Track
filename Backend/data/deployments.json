@@ -1,6 +1,7 @@
 [
   {
     "id": "deployment-1006",
+    "project": "Deploy Track",
     "status": "success",
     "message": "Production deployment completed after final smoke checks.",
     "environment": "production",
@@ -14,6 +15,7 @@
   },
   {
     "id": "deployment-1005",
+    "project": "Client Portal",
     "status": "failed",
     "message": "Staging deployment failed during API validation.",
     "environment": "staging",
@@ -27,6 +29,7 @@
   },
   {
     "id": "deployment-1004",
+    "project": "Deploy Track",
     "status": "running",
     "message": "Production rollback verification is currently running.",
     "environment": "production",
@@ -40,6 +43,7 @@
   },
   {
     "id": "deployment-1003",
+    "project": "Deploy Track",
     "status": "success",
     "message": "Dashboard layout update released to staging.",
     "environment": "staging",
@@ -53,6 +57,7 @@
   },
   {
     "id": "deployment-1002",
+    "project": "Analytics Hub",
     "status": "success",
     "message": "Backend persistence layer deployed for local testing.",
     "environment": "development",
@@ -66,6 +71,7 @@
   },
   {
     "id": "deployment-1001",
+    "project": "Deploy Track",
     "status": "success",
     "message": "Initial working model prepared for end-term build cycle.",
     "environment": "development",

@@ -15,6 +15,7 @@ function buildStats(deployments) {
         failed: 0,
         running: 0,
         latestDeployment: deployments[0] || null,
+        projectCount: new Set(deployments.map((deployment) => deployment.project).filter(Boolean)).size,
     };
 
     for (const deployment of deployments) {
@@ -29,6 +30,7 @@ function buildStats(deployments) {
 function normalizeDeploymentPayload(body) {
     const status = String(body.status || "").trim().toLowerCase();
     const message = String(body.message || "").trim();
+    const project = String(body.project || "").trim();
 
     if (!VALID_STATUSES.has(status)) {
         return {
@@ -42,7 +44,14 @@ function normalizeDeploymentPayload(body) {
         };
     }
 
+    if (!project) {
+        return {
+            error: "Project name is required.",
+        };
+    }
+
     return {
+        project,
         status,
         message,
         environment: String(body.environment || "development").trim() || "development",
@@ -60,6 +69,7 @@ async function getDeployments() {
 }
 
 function normalizeDeploymentQuery(query = {}) {
+    const project = String(query.project || "").trim().toLowerCase();
     const status = String(query.status || "").trim().toLowerCase();
     const environment = String(query.environment || "").trim().toLowerCase();
     const branch = String(query.branch || "").trim().toLowerCase();
@@ -68,6 +78,7 @@ function normalizeDeploymentQuery(query = {}) {
     const sort = String(query.sort || "latest").trim().toLowerCase();
 
     return {
+        project,
         status: VALID_STATUSES.has(status) ? status : "",
         environment,
         branch,
@@ -81,6 +92,8 @@ function applyDeploymentFilters(deployments, query = {}) {
     const normalizedQuery = normalizeDeploymentQuery(query);
 
     const filteredDeployments = deployments.filter((deployment) => {
+        const projectMatch = !normalizedQuery.project
+            || String(deployment.project || "").toLowerCase() === normalizedQuery.project;
         const statusMatch = !normalizedQuery.status || deployment.status === normalizedQuery.status;
         const environmentMatch = !normalizedQuery.environment
             || String(deployment.environment || "").toLowerCase() === normalizedQuery.environment;
@@ -99,7 +112,7 @@ function applyDeploymentFilters(deployments, query = {}) {
             .toLowerCase();
         const searchMatch = !normalizedQuery.search || searchTarget.includes(normalizedQuery.search);
 
-        return statusMatch && environmentMatch && branchMatch && sourceMatch && searchMatch;
+        return projectMatch && statusMatch && environmentMatch && branchMatch && sourceMatch && searchMatch;
     });
 
     filteredDeployments.sort((a, b) => {
@@ -125,6 +138,39 @@ async function getDeploymentStats() {
     const deployments = await readDeployments();
 
     return buildStats(deployments);
+}
+
+async function getProjectSummaries() {
+    const deployments = await readDeployments();
+    const summaryMap = new Map();
+
+    for (const deployment of deployments) {
+        const projectName = deployment.project || "Unassigned";
+
+        if (!summaryMap.has(projectName)) {
+            summaryMap.set(projectName, {
+                project: projectName,
+                total: 0,
+                success: 0,
+                failed: 0,
+                running: 0,
+                latestDeployment: null,
+            });
+        }
+
+        const projectSummary = summaryMap.get(projectName);
+        projectSummary.total += 1;
+
+        if (projectSummary[deployment.status] !== undefined) {
+            projectSummary[deployment.status] += 1;
+        }
+
+        if (!projectSummary.latestDeployment) {
+            projectSummary.latestDeployment = deployment;
+        }
+    }
+
+    return [...summaryMap.values()].sort((left, right) => right.total - left.total);
 }
 
 async function createDeployment(payload) {
@@ -155,6 +201,7 @@ module.exports = {
     normalizeDeploymentPayload,
     getDeployments,
     getDeploymentStats,
+    getProjectSummaries,
     createDeployment,
     queryDeployments,
 };
