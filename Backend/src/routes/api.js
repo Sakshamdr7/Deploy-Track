@@ -3,6 +3,7 @@ const express = require("express");
 const {
     getDeployments,
     getDeploymentStats,
+    getProjectSummaries,
     createDeployment,
     queryDeployments,
 } = require("../services/deploymentService");
@@ -48,6 +49,23 @@ router.get("/stats", async (req, res) => {
         return res.status(500).json({
             success: false,
             error: "Unable to load dashboard stats.",
+        });
+    }
+});
+
+router.get("/projects", async (req, res) => {
+    try {
+        const projects = await getProjectSummaries();
+
+        return res.json({
+            success: true,
+            count: projects.length,
+            projects,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: "Unable to load project summaries.",
         });
     }
 });

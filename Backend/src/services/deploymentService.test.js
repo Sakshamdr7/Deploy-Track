@@ -7,6 +7,7 @@ const {
 
 const sampleDeployments = [
     {
+        project: "Deploy Track",
         status: "success",
         environment: "production",
         branch: "main",
@@ -18,6 +19,7 @@ const sampleDeployments = [
         timestamp: "2026-04-20T10:00:00.000Z",
     },
     {
+        project: "Client Portal",
         status: "failed",
         environment: "staging",
         branch: "feature/filter-ui",
@@ -29,6 +31,7 @@ const sampleDeployments = [
         timestamp: "2026-04-20T09:00:00.000Z",
     },
     {
+        project: "Deploy Track",
         status: "running",
         environment: "development",
         branch: "feature/search",
@@ -44,6 +47,7 @@ const sampleDeployments = [
 function runTests() {
     const normalized = normalizeDeploymentQuery({
         status: "SUCCESS",
+        project: " Deploy Track ",
         environment: " Production ",
         branch: " Main ",
         source: "GitHub-Actions",
@@ -52,6 +56,7 @@ function runTests() {
     });
 
     assert.deepEqual(normalized, {
+        project: "deploy track",
         status: "success",
         environment: "production",
         branch: "main",
@@ -61,6 +66,7 @@ function runTests() {
     });
 
     const filteredByStatus = applyDeploymentFilters(sampleDeployments, {
+        project: "client portal",
         status: "failed",
         environment: "staging",
     });
