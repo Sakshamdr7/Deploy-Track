@@ -1,8 +1,10 @@
 const deploymentForm = document.getElementById("deployment-form");
+const deploymentFilterForm = document.getElementById("deployment-filter-form");
 const deploymentList = document.getElementById("deployment-list");
 const recentActivity = document.getElementById("recent-activity");
 const latestDeploymentPanel = document.getElementById("latest-deployment");
 const statusLogPanel = document.getElementById("status-log-panel");
+const projectSummaryList = document.getElementById("project-summary-list");
 const feedback = document.getElementById("feedback");
 const refreshButton = document.getElementById("refresh-button");
 
@@ -19,6 +21,7 @@ const statusStorageText = document.getElementById("status-storage-text");
 const statusTotalText = document.getElementById("status-total-text");
 const statusSourceText = document.getElementById("status-source-text");
 const statusSourceMeta = document.getElementById("status-source-meta");
+const projectFilter = document.getElementById("project-filter");
 
 const navButtons = document.querySelectorAll("[data-view-target]");
 const viewSections = document.querySelectorAll(".view-section");
@@ -36,6 +39,10 @@ const viewMeta = {
         title: "Add Deployment",
         description: "Create a new deployment event to simulate CI/CD or manual release activity.",
     },
+    "projects-view": {
+        title: "Projects",
+        description: "Track multiple websites or products under one deployment monitoring dashboard.",
+    },
     "system-status-view": {
         title: "System Status",
         description: "Check backend health, storage status, and the latest deployment notes.",
@@ -49,6 +56,7 @@ const viewMeta = {
 let latestHealthData = null;
 let latestStatsData = null;
 let latestDeployments = [];
+let latestProjects = [];
 
 function showFeedback(message, type) {
     feedback.hidden = false;
@@ -86,6 +94,7 @@ function createDeploymentCard(deployment) {
                 <span class="item-meta">${formatTimestamp(deployment.timestamp)}</span>
             </div>
             <div class="item-tags">
+                <span class="tag">${deployment.project}</span>
                 <span class="tag">${deployment.environment}</span>
                 <span class="tag">${deployment.branch}</span>
                 <span class="tag">${deployment.author}</span>
@@ -119,6 +128,7 @@ function renderDeploymentHistory(deployments) {
             </div>
             <p class="item-message">${latestDeployment.message}</p>
             <div class="item-tags">
+                <span class="tag">${latestDeployment.project}</span>
                 <span class="tag">${latestDeployment.environment}</span>
                 <span class="tag">${latestDeployment.branch}</span>
                 <span class="tag">${latestDeployment.author}</span>
@@ -130,7 +140,7 @@ function renderDeploymentHistory(deployments) {
 
     statusLogPanel.innerHTML = `
         <article class="latest-card">
-            <p class="item-meta">Latest deployment from ${latestDeployment.source} at ${formatTimestamp(latestDeployment.timestamp)}</p>
+            <p class="item-meta">Latest deployment for ${latestDeployment.project} from ${latestDeployment.source} at ${formatTimestamp(latestDeployment.timestamp)}</p>
             <p class="item-message">${latestDeployment.message}</p>
             <p class="log-text">${latestDeployment.logs || "No deployment notes were attached to this event."}</p>
         </article>
@@ -151,6 +161,55 @@ function renderStatusPanel() {
     statusSourceMeta.textContent = latestDeployment
         ? `${latestDeployment.environment} deployment from branch ${latestDeployment.branch}`
         : "No recent deployment available yet.";
+}
+
+function renderProjectOptions(projects) {
+    const projectOptions = ['<option value="">All Projects</option>']
+        .concat(projects.map((project) => `<option value="${project.project}">${project.project}</option>`));
+
+    projectFilter.innerHTML = projectOptions.join("");
+}
+
+function renderProjectSummaries(projects) {
+    if (!projects.length) {
+        projectSummaryList.innerHTML = '<div class="empty-state">No projects have deployment records yet.</div>';
+        return;
+    }
+
+    projectSummaryList.innerHTML = projects
+        .map((project) => `
+            <article class="project-card">
+                <div class="project-top">
+                    <div>
+                        <p class="section-kicker">Project</p>
+                        <h3 class="project-name">${project.project}</h3>
+                    </div>
+                    <span class="badge ${project.latestDeployment?.status || "success"}">${project.latestDeployment?.status || "tracked"}</span>
+                </div>
+                <div class="project-stats">
+                    <div class="project-stat">
+                        <span>Total Deployments</span>
+                        <strong>${project.total}</strong>
+                    </div>
+                    <div class="project-stat">
+                        <span>Successful</span>
+                        <strong>${project.success}</strong>
+                    </div>
+                    <div class="project-stat">
+                        <span>Failed</span>
+                        <strong>${project.failed}</strong>
+                    </div>
+                    <div class="project-stat">
+                        <span>Running</span>
+                        <strong>${project.running}</strong>
+                    </div>
+                </div>
+                <p class="item-meta">
+                    Latest: ${project.latestDeployment ? project.latestDeployment.message : "No recent deployment"}
+                </p>
+            </article>
+        `)
+        .join("");
 }
 
 function activateView(viewId) {
@@ -209,9 +268,59 @@ async function loadDashboardData() {
     }
 }
 
+function buildDeploymentQueryString() {
+    const formData = new FormData(deploymentFilterForm);
+    const params = new URLSearchParams();
+
+    for (const [key, value] of formData.entries()) {
+        if (String(value).trim()) {
+            params.set(key, String(value).trim());
+        }
+    }
+
+    const queryString = params.toString();
+
+    return queryString ? `?${queryString}` : "";
+}
+
+async function loadFilteredDeployments() {
+    try {
+        const response = await fetch(`/api/deployments${buildDeploymentQueryString()}`);
+
+        if (!response.ok) {
+            throw new Error("Unable to load filtered deployments.");
+        }
+
+        const data = await response.json();
+        deploymentList.innerHTML = data.deployments.length
+            ? data.deployments.map(createDeploymentCard).join("")
+            : '<div class="empty-state">No deployments matched the selected filters.</div>';
+    } catch (error) {
+        showFeedback(error.message, "error");
+    }
+}
+
+async function loadProjects() {
+    try {
+        const response = await fetch("/api/projects");
+
+        if (!response.ok) {
+            throw new Error("Unable to load project summaries.");
+        }
+
+        const data = await response.json();
+        latestProjects = data.projects || [];
+        renderProjectOptions(latestProjects);
+        renderProjectSummaries(latestProjects);
+    } catch (error) {
+        showFeedback(error.message, "error");
+    }
+}
+
 async function refreshAllData() {
     clearFeedback();
-    await Promise.all([loadHealth(), loadDashboardData()]);
+    await Promise.all([loadHealth(), loadDashboardData(), loadProjects()]);
+    await loadFilteredDeployments();
 }
 
 navButtons.forEach((button) => {
@@ -220,12 +329,16 @@ navButtons.forEach((button) => {
     });
 });
 
+deploymentFilterForm.addEventListener("input", loadFilteredDeployments);
+deploymentFilterForm.addEventListener("change", loadFilteredDeployments);
+
 deploymentForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     clearFeedback();
 
     const formData = new FormData(deploymentForm);
     const payload = {
+        project: formData.get("project"),
         status: formData.get("status"),
         environment: formData.get("environment"),
         branch: formData.get("branch"),
@@ -253,6 +366,7 @@ deploymentForm.addEventListener("submit", async (event) => {
         }
 
         deploymentForm.reset();
+        deploymentForm.elements.project.value = "Deploy Track";
         deploymentForm.elements.branch.value = "main";
         showFeedback("Deployment saved successfully.", "success");
 
