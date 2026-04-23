@@ -22,6 +22,9 @@ const statusTotalText = document.getElementById("status-total-text");
 const statusSourceText = document.getElementById("status-source-text");
 const statusSourceMeta = document.getElementById("status-source-meta");
 const projectFilter = document.getElementById("project-filter");
+const openNavButton = document.getElementById("open-nav");
+const closeNavButton = document.getElementById("close-nav");
+const navOverlay = document.getElementById("nav-overlay");
 
 const navButtons = document.querySelectorAll("[data-view-target]");
 const viewSections = document.querySelectorAll(".view-section");
@@ -225,6 +228,10 @@ function activateView(viewId) {
     pageDescription.textContent = viewMeta[viewId].description;
 }
 
+function setNavOpen(isOpen) {
+    document.body.classList.toggle("nav-open", isOpen);
+}
+
 async function loadHealth() {
     try {
         const response = await fetch("/api/health");
@@ -326,7 +333,20 @@ async function refreshAllData() {
 navButtons.forEach((button) => {
     button.addEventListener("click", () => {
         activateView(button.dataset.viewTarget);
+        setNavOpen(false);
     });
+});
+
+openNavButton.addEventListener("click", () => {
+    setNavOpen(true);
+});
+
+closeNavButton.addEventListener("click", () => {
+    setNavOpen(false);
+});
+
+navOverlay.addEventListener("click", () => {
+    setNavOpen(false);
 });
 
 deploymentFilterForm.addEventListener("input", loadFilteredDeployments);
