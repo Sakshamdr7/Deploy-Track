@@ -25,9 +25,11 @@ const projectFilter = document.getElementById("project-filter");
 const openNavButton = document.getElementById("open-nav");
 const closeNavButton = document.getElementById("close-nav");
 const navOverlay = document.getElementById("nav-overlay");
+const themeToggle = document.getElementById("theme-toggle");
 
 const navButtons = document.querySelectorAll("[data-view-target]");
 const viewSections = document.querySelectorAll(".view-section");
+const THEME_STORAGE_KEY = "deploy-track-theme";
 
 const viewMeta = {
     "dashboard-view": {
@@ -60,6 +62,26 @@ let latestHealthData = null;
 let latestStatsData = null;
 let latestDeployments = [];
 let latestProjects = [];
+
+function applyTheme(theme) {
+    const normalizedTheme = theme === "dark" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", normalizedTheme);
+    themeToggle.textContent = normalizedTheme === "dark" ? "Light Mode" : "Dark Mode";
+    themeToggle.setAttribute("aria-label", `Switch to ${normalizedTheme === "dark" ? "light" : "dark"} mode`);
+}
+
+function loadSavedTheme() {
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    applyTheme(savedTheme || "light");
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute("data-theme");
+    const nextTheme = currentTheme === "dark" ? "light" : "dark";
+
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    applyTheme(nextTheme);
+}
 
 function showFeedback(message, type) {
     feedback.hidden = false;
@@ -349,6 +371,8 @@ navOverlay.addEventListener("click", () => {
     setNavOpen(false);
 });
 
+themeToggle.addEventListener("click", toggleTheme);
+
 deploymentFilterForm.addEventListener("input", loadFilteredDeployments);
 deploymentFilterForm.addEventListener("change", loadFilteredDeployments);
 
@@ -399,5 +423,6 @@ deploymentForm.addEventListener("submit", async (event) => {
 
 refreshButton.addEventListener("click", refreshAllData);
 
+loadSavedTheme();
 activateView("dashboard-view");
 refreshAllData();
