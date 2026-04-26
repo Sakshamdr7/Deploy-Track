@@ -1,36 +1,45 @@
 # Deploy-Track
 
-## Project Overview
+Deploy-Track is a full-stack **Deployment Tracking Dashboard** for monitoring deployment activity across multiple projects.
 
-Deploy-Track is a full-stack web dashboard for monitoring CI/CD pipeline activity, deployment history, release status, and environment updates through a simple local working model.
+It is built for local demo and academic presentation use, with a product-style UI and API-backed deployment records.
 
-## Project Goal
+## What This Project Is
 
-Deploy-Track aims to provide a centralized dashboard for tracking deployment events, viewing pipeline outcomes, storing release-related metadata, and improving visibility into software delivery workflows in a simple full-stack web application.
+- GitHub tracks code changes
+- Deploy-Track tracks deployment activity
 
-## Key Features
+Core workflow:
+1. Create deployment events from dashboard form (or CI source metadata)
+2. Store records in backend JSON storage
+3. Analyze records through dashboard, filters, projects view, and system status
+4. Review latest and failed deployments quickly during demos
 
-- Multi-view dashboard with navigation for Dashboard, Deployments, Add Deployment, System Status, and About Project
-- Backend API built with Express
-- Persistent local storage using JSON as a lightweight database
-- Summary cards for total, successful, failed, and running deployments
-- Deployment metadata including branch, environment, author, commit hash, duration, and logs
-- GitHub Actions workflow for project validation
+## Final Feature Set
+
+- Multi-view dashboard: Dashboard, Deployments, Add Deployment, Projects, System Status, About
+- Responsive drawer navigation + overlay behavior
+- Dark mode with local persistence
+- Deployment filters: project, status, environment, search, sort
+- Deployment detail view (`View Details`) with full metadata + logs
+- System status improvements:
+  - latest deployment summary
+  - failure monitor (count + rate + latest failure)
+  - recent failure triage list
+- Demo authentication:
+  - login + signup UI
+  - local demo user/session storage
+  - dashboard access restricted until login
+  - logout support
+- Backend service layering + tests + CI workflow
 
 ## Tech Stack
 
 - Frontend: HTML, CSS, JavaScript
 - Backend: Node.js, Express
-- Storage: JSON-based local persistence
-- CI/CD: GitHub Actions
-
-## How It Works
-
-1. The user opens the dashboard locally in the browser.
-2. The frontend sends deployment data to the backend API.
-3. The backend validates and stores the deployment record.
-4. The dashboard fetches updated deployment history and statistics.
-5. The latest deployment state is shown in the UI with status and logs.
+- Storage: JSON file (`Backend/data/deployments.json`)
+- Testing: Node assert tests for service logic
+- CI: GitHub Actions (`.github/workflows/node.js.yml`)
 
 ## Project Structure
 
@@ -38,26 +47,23 @@ Deploy-Track aims to provide a centralized dashboard for tracking deployment eve
 Deploy-Track/
 |-- Backend/
 |   |-- data/
-|   |   `-- deployments.json
-|   |-- package.json
+|   |   |-- deployments.json
+|   |   `-- deployments.sample.json
+|   |-- src/
+|   |   |-- routes/
+|   |   |-- services/
+|   |   `-- storage/
 |   `-- server.js
 |-- Frontend/
 |   |-- index.html
 |   |-- script.js
 |   `-- style.css
-|-- .github/
-|   `-- workflows/
-|       `-- node.js.yml
-`-- docs/
-    `-- FINAL_SCOPE.md
+|-- docs/
+|   `-- DEMO_FLOW.md
+`-- README.md
 ```
 
 ## Run Locally
-
-1. Open a terminal in `Backend`
-2. Install dependencies
-3. Start the server
-4. Open `http://localhost:5000`
 
 ```bash
 cd Backend
@@ -65,17 +71,36 @@ npm install
 npm start
 ```
 
+Then open:
+- [http://localhost:5000](http://localhost:5000)
+
+## Demo Login
+
+- Email: `demo@deploytrack.com`
+- Password: `demo1234`
+
+You can also create a new demo account from the Signup tab.
+
+## Data Files and Repo Hygiene
+
+- `Backend/data/deployments.json` is intentionally tracked as an empty array (`[]`)
+- `Backend/data/deployments.sample.json` contains realistic sample records for demo seeding
+- On first run, backend auto-creates `deployments.json` if missing
+
+To seed sample data for a demo session, copy sample file contents into `deployments.json`.
+
 ## API Endpoints
 
 - `GET /api/health`
 - `GET /api/deployments`
+- `GET /api/deployments/:id`
 - `GET /api/stats`
+- `GET /api/projects`
 - `POST /api/deployments`
 
-### Deployment Query Parameters
+### Query Parameters (`GET /api/deployments`)
 
-The `GET /api/deployments` endpoint supports optional query parameters:
-
+- `project=<project-name>`
 - `status=success|failed|running`
 - `environment=development|staging|production`
 - `branch=<branch-name>`
@@ -83,31 +108,14 @@ The `GET /api/deployments` endpoint supports optional query parameters:
 - `search=<text>`
 - `sort=latest|oldest`
 
-Example:
+## Testing
 
-```text
-/api/deployments?status=success&environment=production&sort=latest
+```bash
+cd Backend
+npm test
 ```
 
-## Sample Deployment Payload
+## Presentation Notes
 
-```json
-{
-  "status": "success",
-  "message": "Production deployment completed successfully",
-  "environment": "production",
-  "branch": "main",
-  "commitHash": "a1b2c3d",
-  "author": "Saksham",
-  "duration": 124,
-  "logs": "Build passed. Container updated. Smoke checks passed."
-}
-```
-
-## Future Enhancements
-
-- Add filtering and search for deployment history
-- Add deployment detail modal or side panel
-- Replace JSON persistence with MongoDB
-- Improve CI/CD integration for automatic deployment event creation
-- Add screenshots and architecture diagrams for project presentation
+Use [docs/DEMO_FLOW.md](docs/DEMO_FLOW.md) for a step-by-step demo script and talking points.
+Use [docs/SCREENSHOT_CHECKLIST.md](docs/SCREENSHOT_CHECKLIST.md) to capture final presentation screenshots.

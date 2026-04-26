@@ -18,18 +18,32 @@ const pageTitle = document.getElementById("page-title");
 const pageDescription = document.getElementById("page-description");
 const statusHealthText = document.getElementById("status-health-text");
 const statusStorageText = document.getElementById("status-storage-text");
+const statusFailedText = document.getElementById("status-failed-text");
+const statusFailedMeta = document.getElementById("status-failed-meta");
 const statusTotalText = document.getElementById("status-total-text");
 const statusSourceText = document.getElementById("status-source-text");
 const statusSourceMeta = document.getElementById("status-source-meta");
+const statusFailurePanel = document.getElementById("status-failure-panel");
 const projectFilter = document.getElementById("project-filter");
 const openNavButton = document.getElementById("open-nav");
 const closeNavButton = document.getElementById("close-nav");
 const navOverlay = document.getElementById("nav-overlay");
 const themeToggle = document.getElementById("theme-toggle");
+const deploymentDetailPanel = document.getElementById("deployment-detail-panel");
+const logoutButton = document.getElementById("logout-button");
+const sessionUser = document.getElementById("session-user");
+const authScreen = document.getElementById("auth-screen");
+const loginTab = document.getElementById("login-tab");
+const signupTab = document.getElementById("signup-tab");
+const loginForm = document.getElementById("login-form");
+const signupForm = document.getElementById("signup-form");
+const authFeedback = document.getElementById("auth-feedback");
 
 const navButtons = document.querySelectorAll("[data-view-target]");
 const viewSections = document.querySelectorAll(".view-section");
 const THEME_STORAGE_KEY = "deploy-track-theme";
+const AUTH_USERS_STORAGE_KEY = "deploy-track-users";
+const AUTH_SESSION_STORAGE_KEY = "deploy-track-session";
 
 const viewMeta = {
     "dashboard-view": {
@@ -83,6 +97,89 @@ function toggleTheme() {
     applyTheme(nextTheme);
 }
 
+function getStoredUsers() {
+    try {
+        const users = JSON.parse(localStorage.getItem(AUTH_USERS_STORAGE_KEY) || "[]");
+        return Array.isArray(users) ? users : [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function saveUsers(users) {
+    localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(users));
+}
+
+function getSession() {
+    try {
+        return JSON.parse(localStorage.getItem(AUTH_SESSION_STORAGE_KEY) || "null");
+    } catch (error) {
+        return null;
+    }
+}
+
+function setSession(session) {
+    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session));
+}
+
+function clearSession() {
+    localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+}
+
+function showAuthFeedback(message, type) {
+    authFeedback.hidden = false;
+    authFeedback.textContent = message;
+    authFeedback.className = `feedback ${type}`;
+}
+
+function clearAuthFeedback() {
+    authFeedback.hidden = true;
+    authFeedback.textContent = "";
+    authFeedback.className = "feedback";
+}
+
+function switchAuthMode(mode) {
+    const isLogin = mode === "login";
+
+    loginTab.classList.toggle("active", isLogin);
+    signupTab.classList.toggle("active", !isLogin);
+    loginTab.setAttribute("aria-selected", String(isLogin));
+    signupTab.setAttribute("aria-selected", String(!isLogin));
+    loginForm.hidden = !isLogin;
+    signupForm.hidden = isLogin;
+    clearAuthFeedback();
+}
+
+function setAuthenticatedUi(session) {
+    const isAuthenticated = Boolean(session?.email);
+
+    authScreen.hidden = isAuthenticated;
+    document.body.classList.toggle("authenticated", isAuthenticated);
+
+    if (isAuthenticated) {
+        const name = session.name || session.email;
+        sessionUser.textContent = `Signed in: ${name}`;
+    } else {
+        sessionUser.textContent = "";
+        setNavOpen(false);
+        switchAuthMode("login");
+    }
+}
+
+function ensureDemoUser() {
+    const users = getStoredUsers();
+    const hasDemo = users.some((user) => user.email === "demo@deploytrack.com");
+
+    if (!hasDemo) {
+        users.push({
+            name: "Demo User",
+            email: "demo@deploytrack.com",
+            password: "demo1234",
+        });
+        saveUsers(users);
+    }
+}
+
 function showFeedback(message, type) {
     feedback.hidden = false;
     feedback.textContent = message;
@@ -106,14 +203,57 @@ function renderStats(stats) {
     runningCount.textContent = stats.running ?? 0;
 }
 
-function createDeploymentCard(deployment) {
+function renderDeploymentDetail(deployment) {
+    if (!deployment) {
+        deploymentDetailPanel.innerHTML = `
+            <p class="section-kicker">Deployment Detail</p>
+            <h3>Select a deployment</h3>
+            <p class="panel-copy">Choose any row in Deployment History to inspect full metadata and notes.</p>
+        `;
+        return;
+    }
+
+    const durationText = deployment.duration ? `${deployment.duration}s` : "Not recorded";
+    deploymentDetailPanel.innerHTML = `
+        <p class="section-kicker">Deployment Detail</p>
+        <div class="item-top">
+            <span class="badge ${deployment.status}">${deployment.status}</span>
+            <span class="item-meta">${formatTimestamp(deployment.timestamp)}</span>
+        </div>
+        <p class="item-message">${deployment.message}</p>
+        <div class="item-tags">
+            <span class="tag">${deployment.project}</span>
+            <span class="tag">${deployment.environment}</span>
+            <span class="tag">${deployment.branch}</span>
+            <span class="tag">${deployment.author}</span>
+            <span class="tag">${durationText}</span>
+            <span class="tag">${deployment.source}</span>
+        </div>
+        <p class="item-meta">Commit: ${deployment.commitHash}</p>
+        <p class="log-text">${deployment.logs || "No deployment notes were attached to this event."}</p>
+    `;
+}
+
+function renderFailureTriage(deployments) {
+    const failures = deployments.filter((deployment) => deployment.status === "failed").slice(0, 3);
+
+    statusFailurePanel.innerHTML = failures.length
+        ? failures.map((deployment) => createDeploymentCard(deployment)).join("")
+        : '<div class="empty-state">No failed deployments in the current history.</div>';
+}
+
+function createDeploymentCard(deployment, options = {}) {
+    const showDetailsButton = Boolean(options.showDetailsButton);
     const durationText = deployment.duration ? `${deployment.duration}s` : "Not recorded";
     const logs = deployment.logs
         ? `<p class="log-text">${deployment.logs}</p>`
         : '<p class="log-text">No deployment notes were attached to this event.</p>';
+    const detailsAction = showDetailsButton
+        ? `<button class="detail-trigger" type="button" data-deployment-id="${deployment.id}">View Details</button>`
+        : "";
 
     return `
-        <article class="history-item">
+        <article class="history-item" data-deployment-id="${deployment.id}">
             <div class="item-top">
                 <span class="badge ${deployment.status}">${deployment.status}</span>
                 <span class="item-meta">${formatTimestamp(deployment.timestamp)}</span>
@@ -128,6 +268,7 @@ function createDeploymentCard(deployment) {
             <p class="item-message">${deployment.message}</p>
             <p class="item-meta">Commit: ${deployment.commitHash}</p>
             ${logs}
+            ${detailsAction}
         </article>
     `;
 }
@@ -138,10 +279,14 @@ function renderDeploymentHistory(deployments) {
         recentActivity.innerHTML = '<div class="empty-state">No recent activity yet.</div>';
         latestDeploymentPanel.innerHTML = '<div class="empty-state">No latest deployment available yet.</div>';
         statusLogPanel.innerHTML = '<div class="empty-state">No deployment logs are available yet.</div>';
+        renderDeploymentDetail(null);
+        renderFailureTriage([]);
         return;
     }
 
-    deploymentList.innerHTML = deployments.map(createDeploymentCard).join("");
+    deploymentList.innerHTML = deployments.map((deployment) => createDeploymentCard(deployment, {
+        showDetailsButton: true,
+    })).join("");
     recentActivity.innerHTML = deployments.slice(0, 3).map(createDeploymentCard).join("");
 
     const latestDeployment = deployments[0];
@@ -170,6 +315,9 @@ function renderDeploymentHistory(deployments) {
             <p class="log-text">${latestDeployment.logs || "No deployment notes were attached to this event."}</p>
         </article>
     `;
+
+    renderDeploymentDetail(deployments[0]);
+    renderFailureTriage(deployments);
 }
 
 function renderStatusPanel() {
@@ -178,13 +326,19 @@ function renderStatusPanel() {
     }
 
     const latestDeployment = latestStatsData.latestDeployment;
+    const latestFailure = latestStatsData.latestFailure;
 
     statusHealthText.textContent = latestHealthData.message;
     statusStorageText.textContent = `${latestHealthData.totalDeployments} records stored in ${latestHealthData.storage}`;
+    statusFailedText.textContent = latestStatsData.failed ?? 0;
+    statusFailedMeta.textContent = latestFailure
+        ? `Latest failure in ${latestFailure.environment} on ${latestFailure.branch} (${latestStatsData.failureRate}% failure rate)`
+        : "No failures detected in current records.";
+    statusFailedText.closest(".panel")?.classList.toggle("status-alert", Boolean(latestStatsData.failed));
     statusTotalText.textContent = latestStatsData.total ?? 0;
-    statusSourceText.textContent = latestDeployment ? latestDeployment.source : "Unknown";
+    statusSourceText.textContent = latestDeployment ? latestDeployment.status : "Unknown";
     statusSourceMeta.textContent = latestDeployment
-        ? `${latestDeployment.environment} deployment from branch ${latestDeployment.branch}`
+        ? `${latestDeployment.environment} deployment from ${latestDeployment.source} on branch ${latestDeployment.branch}`
         : "No recent deployment available yet.";
 }
 
@@ -322,8 +476,33 @@ async function loadFilteredDeployments() {
 
         const data = await response.json();
         deploymentList.innerHTML = data.deployments.length
-            ? data.deployments.map(createDeploymentCard).join("")
+            ? data.deployments.map((deployment) => createDeploymentCard(deployment, {
+                showDetailsButton: true,
+            })).join("")
             : '<div class="empty-state">No deployments matched the selected filters.</div>';
+
+        renderDeploymentDetail(data.deployments[0] || null);
+    } catch (error) {
+        showFeedback(error.message, "error");
+    }
+}
+
+async function loadDeploymentDetailById(id) {
+    const deploymentId = String(id || "").trim();
+
+    if (!deploymentId) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/deployments/${encodeURIComponent(deploymentId)}`);
+
+        if (!response.ok) {
+            throw new Error("Unable to load deployment details.");
+        }
+
+        const data = await response.json();
+        renderDeploymentDetail(data.deployment || null);
     } catch (error) {
         showFeedback(error.message, "error");
     }
@@ -352,6 +531,88 @@ async function refreshAllData() {
     await loadFilteredDeployments();
 }
 
+function handleLoginSubmit(event) {
+    event.preventDefault();
+    clearAuthFeedback();
+
+    const formData = new FormData(loginForm);
+    const email = String(formData.get("email") || "").trim().toLowerCase();
+    const password = String(formData.get("password") || "").trim();
+    const users = getStoredUsers();
+    const matchedUser = users.find((user) => user.email === email && user.password === password);
+
+    if (!matchedUser) {
+        showAuthFeedback("Invalid email or password. Try demo@deploytrack.com / demo1234", "error");
+        return;
+    }
+
+    setSession({
+        name: matchedUser.name,
+        email: matchedUser.email,
+        loginAt: new Date().toISOString(),
+    });
+
+    setAuthenticatedUi(getSession());
+    refreshAllData();
+}
+
+function handleSignupSubmit(event) {
+    event.preventDefault();
+    clearAuthFeedback();
+
+    const formData = new FormData(signupForm);
+    const name = String(formData.get("name") || "").trim();
+    const email = String(formData.get("email") || "").trim().toLowerCase();
+    const password = String(formData.get("password") || "").trim();
+
+    if (password.length < 6) {
+        showAuthFeedback("Password should be at least 6 characters for demo signup.", "error");
+        return;
+    }
+
+    const users = getStoredUsers();
+    const exists = users.some((user) => user.email === email);
+
+    if (exists) {
+        showAuthFeedback("Account already exists. Use login instead.", "error");
+        return;
+    }
+
+    users.push({ name, email, password });
+    saveUsers(users);
+
+    setSession({
+        name,
+        email,
+        loginAt: new Date().toISOString(),
+    });
+
+    showAuthFeedback("Account created. Redirecting to dashboard...", "success");
+    setAuthenticatedUi(getSession());
+    refreshAllData();
+}
+
+function handleLogout() {
+    clearSession();
+    setAuthenticatedUi(null);
+    showAuthFeedback("You have been logged out.", "success");
+}
+
+function initializeAuth() {
+    ensureDemoUser();
+
+    loginTab.addEventListener("click", () => switchAuthMode("login"));
+    signupTab.addEventListener("click", () => switchAuthMode("signup"));
+    loginForm.addEventListener("submit", handleLoginSubmit);
+    signupForm.addEventListener("submit", handleSignupSubmit);
+    logoutButton.addEventListener("click", handleLogout);
+
+    const session = getSession();
+    setAuthenticatedUi(session);
+
+    return Boolean(session?.email);
+}
+
 navButtons.forEach((button) => {
     button.addEventListener("click", () => {
         activateView(button.dataset.viewTarget);
@@ -372,6 +633,16 @@ navOverlay.addEventListener("click", () => {
 });
 
 themeToggle.addEventListener("click", toggleTheme);
+
+deploymentList.addEventListener("click", (event) => {
+    const target = event.target.closest(".detail-trigger");
+
+    if (!target) {
+        return;
+    }
+
+    loadDeploymentDetailById(target.dataset.deploymentId);
+});
 
 deploymentFilterForm.addEventListener("input", loadFilteredDeployments);
 deploymentFilterForm.addEventListener("change", loadFilteredDeployments);
@@ -425,4 +696,6 @@ refreshButton.addEventListener("click", refreshAllData);
 
 loadSavedTheme();
 activateView("dashboard-view");
-refreshAllData();
+if (initializeAuth()) {
+    refreshAllData();
+}

@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 
 const {
     applyDeploymentFilters,
+    buildStats,
     normalizeDeploymentQuery,
 } = require("./deploymentService");
 
@@ -82,6 +83,12 @@ function runTests() {
     assert.equal(filteredBySearch.deployments.length, 2);
     assert.equal(filteredBySearch.deployments[0].commitHash, "dev789");
     assert.equal(filteredBySearch.deployments[1].commitHash, "prod123");
+
+    const stats = buildStats(sampleDeployments);
+    assert.equal(stats.total, 3);
+    assert.equal(stats.failed, 1);
+    assert.equal(stats.failureRate, 33.3);
+    assert.equal(stats.latestFailure?.commitHash, "stag456");
 
     console.log("deploymentService tests passed");
 }

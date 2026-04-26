@@ -2,6 +2,7 @@ const express = require("express");
 
 const {
     getDeployments,
+    getDeploymentById,
     getDeploymentStats,
     getProjectSummaries,
     createDeployment,
@@ -33,6 +34,27 @@ router.get("/deployments", async (req, res) => {
         return res.status(500).json({
             success: false,
             error: "Unable to load deployments.",
+        });
+    }
+});
+
+router.get("/deployments/:id", async (req, res) => {
+    try {
+        const deployment = await getDeploymentById(req.params.id);
+
+        return res.json({
+            success: true,
+            deployment,
+        });
+    } catch (error) {
+        const statusCode = error.statusCode || 500;
+        const message = statusCode === 500
+            ? "Unable to load deployment details."
+            : error.message;
+
+        return res.status(statusCode).json({
+            success: false,
+            error: message,
         });
     }
 });

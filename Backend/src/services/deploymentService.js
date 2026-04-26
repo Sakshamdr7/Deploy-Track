@@ -9,12 +9,15 @@ const VALID_STATUSES = new Set(["success", "failed", "running"]);
 const VALID_SORT_ORDERS = new Set(["latest", "oldest"]);
 
 function buildStats(deployments) {
+    const latestFailure = deployments.find((deployment) => deployment.status === "failed") || null;
     const stats = {
         total: deployments.length,
         success: 0,
         failed: 0,
         running: 0,
         latestDeployment: deployments[0] || null,
+        latestFailure,
+        failureRate: 0,
         projectCount: new Set(deployments.map((deployment) => deployment.project).filter(Boolean)).size,
     };
 
@@ -22,6 +25,10 @@ function buildStats(deployments) {
         if (stats[deployment.status] !== undefined) {
             stats[deployment.status] += 1;
         }
+    }
+
+    if (stats.total > 0) {
+        stats.failureRate = Number(((stats.failed / stats.total) * 100).toFixed(1));
     }
 
     return stats;
@@ -66,6 +73,27 @@ function normalizeDeploymentPayload(body) {
 
 async function getDeployments() {
     return readDeployments();
+}
+
+async function getDeploymentById(id) {
+    const deploymentId = String(id || "").trim();
+
+    if (!deploymentId) {
+        const error = new Error("Deployment id is required.");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const deployments = await readDeployments();
+    const deployment = deployments.find((item) => item.id === deploymentId);
+
+    if (!deployment) {
+        const error = new Error("Deployment not found.");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    return deployment;
 }
 
 function normalizeDeploymentQuery(query = {}) {
@@ -200,6 +228,7 @@ module.exports = {
     normalizeDeploymentQuery,
     normalizeDeploymentPayload,
     getDeployments,
+    getDeploymentById,
     getDeploymentStats,
     getProjectSummaries,
     createDeployment,

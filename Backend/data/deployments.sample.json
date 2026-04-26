@@ -1,0 +1,44 @@
+[
+  {
+    "id": "deployment-1006",
+    "project": "Deploy Track",
+    "status": "success",
+    "message": "Production deployment completed after final smoke checks.",
+    "environment": "production",
+    "branch": "main",
+    "commitHash": "e9a1b72",
+    "author": "Saksham",
+    "duration": 168,
+    "logs": "Build passed. Static files generated. API health check returned 200. Deployment verified successfully.",
+    "source": "github-actions",
+    "timestamp": "2026-04-18T08:45:00.000Z"
+  },
+  {
+    "id": "deployment-1005",
+    "project": "Client Portal",
+    "status": "failed",
+    "message": "Staging deployment failed during API validation.",
+    "environment": "staging",
+    "branch": "feature/filter-ui",
+    "commitHash": "c31ad55",
+    "author": "Saksham",
+    "duration": 94,
+    "logs": "Frontend build succeeded. Backend started. Validation request to /api/stats returned malformed payload.",
+    "source": "github-actions",
+    "timestamp": "2026-04-18T07:20:00.000Z"
+  },
+  {
+    "id": "deployment-1004",
+    "project": "Deploy Track",
+    "status": "running",
+    "message": "Production rollback verification is currently running.",
+    "environment": "production",
+    "branch": "hotfix/health-check",
+    "commitHash": "82fd9bc",
+    "author": "Saksham",
+    "duration": 52,
+    "logs": "Rollback package restored. Waiting for post-deployment health and log verification.",
+    "source": "dashboard",
+    "timestamp": "2026-04-18T06:05:00.000Z"
+  }
+]
