@@ -1,6 +1,6 @@
 const { app, ensureAppData } = require("./src/app");
 
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT) || 1945;
 
 if (require.main === module) {
     ensureAppData()

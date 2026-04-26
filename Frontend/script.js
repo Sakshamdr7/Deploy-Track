@@ -38,6 +38,7 @@ const signupTab = document.getElementById("signup-tab");
 const loginForm = document.getElementById("login-form");
 const signupForm = document.getElementById("signup-form");
 const authFeedback = document.getElementById("auth-feedback");
+const pipelineTriggerButtons = document.querySelectorAll(".pipeline-trigger");
 
 const navButtons = document.querySelectorAll("[data-view-target]");
 const viewSections = document.querySelectorAll(".view-section");
@@ -76,6 +77,39 @@ let latestHealthData = null;
 let latestStatsData = null;
 let latestDeployments = [];
 let latestProjects = [];
+
+const pipelineTemplates = {
+    "staging-success": {
+        project: "Deploy Track",
+        status: "success",
+        environment: "staging",
+        branch: "release/staging",
+        message: "CI pipeline completed and deployed to staging.",
+        logs: "Build passed. Tests passed. Deployment verification successful.",
+        workflowName: "deploy-track-ci",
+        jobName: "deploy-staging",
+    },
+    "production-success": {
+        project: "Client Portal",
+        status: "success",
+        environment: "production",
+        branch: "main",
+        message: "CI pipeline promoted release to production.",
+        logs: "Build passed. Integration tests passed. Production rollout completed.",
+        workflowName: "client-portal-ci",
+        jobName: "deploy-production",
+    },
+    "production-failed": {
+        project: "Analytics Hub",
+        status: "failed",
+        environment: "production",
+        branch: "main",
+        message: "CI pipeline failed during production verification.",
+        logs: "Build passed. Tests passed. Post-deploy health checks failed.",
+        workflowName: "analytics-hub-ci",
+        jobName: "verify-production",
+    },
+};
 
 function applyTheme(theme) {
     const normalizedTheme = theme === "dark" ? "dark" : "light";
@@ -168,14 +202,31 @@ function setAuthenticatedUi(session) {
 
 function ensureDemoUser() {
     const users = getStoredUsers();
-    const hasDemo = users.some((user) => user.email === "demo@deploytrack.com");
-
-    if (!hasDemo) {
-        users.push({
+    const demoUsers = [
+        {
             name: "Demo User",
             email: "demo@deploytrack.com",
             password: "demo1234",
-        });
+        },
+        {
+            name: "Saksham",
+            email: "sakshamxiia1424@gmail.com",
+            password: "Qwertyui@12",
+        },
+    ];
+
+    let changed = false;
+
+    demoUsers.forEach((demoUser) => {
+        const exists = users.some((user) => user.email === demoUser.email);
+
+        if (!exists) {
+            users.push(demoUser);
+            changed = true;
+        }
+    });
+
+    if (changed) {
         saveUsers(users);
     }
 }
@@ -196,6 +247,11 @@ function formatTimestamp(value) {
     return new Date(value).toLocaleString();
 }
 
+function isCiTriggered(deployment) {
+    const source = String(deployment?.source || "").toLowerCase();
+    return source.includes("ci") || source === "github-actions";
+}
+
 function renderStats(stats) {
     totalCount.textContent = stats.total ?? 0;
     successCount.textContent = stats.success ?? 0;
@@ -214,12 +270,21 @@ function renderDeploymentDetail(deployment) {
     }
 
     const durationText = deployment.duration ? `${deployment.duration}s` : "Not recorded";
+    const pipelineMeta = deployment.pipelineRunId
+        ? `
+            <p class="item-meta">Pipeline Run: ${deployment.pipelineRunId}</p>
+            <p class="item-meta">Workflow: ${deployment.workflowName || "N/A"} | Job: ${deployment.jobName || "N/A"}</p>
+            ${deployment.pipelineRunUrl ? `<p class="item-meta">Run Link: <a href="${deployment.pipelineRunUrl}" target="_blank" rel="noopener noreferrer">${deployment.pipelineRunUrl}</a></p>` : ""}
+        `
+        : '<p class="item-meta">Pipeline metadata not attached.</p>';
+
     deploymentDetailPanel.innerHTML = `
         <p class="section-kicker">Deployment Detail</p>
         <div class="item-top">
             <span class="badge ${deployment.status}">${deployment.status}</span>
             <span class="item-meta">${formatTimestamp(deployment.timestamp)}</span>
         </div>
+        ${isCiTriggered(deployment) ? '<span class="tag">Triggered by CI</span>' : '<span class="tag">Manual Trigger</span>'}
         <p class="item-message">${deployment.message}</p>
         <div class="item-tags">
             <span class="tag">${deployment.project}</span>
@@ -230,6 +295,7 @@ function renderDeploymentDetail(deployment) {
             <span class="tag">${deployment.source}</span>
         </div>
         <p class="item-meta">Commit: ${deployment.commitHash}</p>
+        ${pipelineMeta}
         <p class="log-text">${deployment.logs || "No deployment notes were attached to this event."}</p>
     `;
 }
@@ -251,6 +317,7 @@ function createDeploymentCard(deployment, options = {}) {
     const detailsAction = showDetailsButton
         ? `<button class="detail-trigger" type="button" data-deployment-id="${deployment.id}">View Details</button>`
         : "";
+    const ciBadge = isCiTriggered(deployment) ? '<span class="tag">CI</span>' : "";
 
     return `
         <article class="history-item" data-deployment-id="${deployment.id}">
@@ -264,6 +331,7 @@ function createDeploymentCard(deployment, options = {}) {
                 <span class="tag">${deployment.branch}</span>
                 <span class="tag">${deployment.author}</span>
                 <span class="tag">${durationText}</span>
+                ${ciBadge}
             </div>
             <p class="item-message">${deployment.message}</p>
             <p class="item-meta">Commit: ${deployment.commitHash}</p>
@@ -531,6 +599,55 @@ async function refreshAllData() {
     await loadFilteredDeployments();
 }
 
+async function postDeployment(payload) {
+    const response = await fetch("/api/deployments", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Unable to save deployment.");
+    }
+
+    return data.deployment;
+}
+
+async function triggerPipeline(templateKey) {
+    const template = pipelineTemplates[templateKey];
+
+    if (!template) {
+        return;
+    }
+
+    clearFeedback();
+    const runId = `run-${Date.now()}`;
+    const payload = {
+        ...template,
+        source: "ci-simulator",
+        author: "CI Bot",
+        duration: Math.floor(60 + Math.random() * 120),
+        commitHash: Math.random().toString(16).slice(2, 9),
+        pipelineRunId: runId,
+        workflowName: template.workflowName,
+        jobName: template.jobName,
+        pipelineRunUrl: `https://ci-simulator.local/runs/${runId}`,
+    };
+
+    try {
+        await postDeployment(payload);
+        showFeedback(`Pipeline run ${runId} saved successfully.`, "success");
+        await refreshAllData();
+        activateView("deployments-view");
+    } catch (error) {
+        showFeedback(error.message, "error");
+    }
+}
+
 function handleLoginSubmit(event) {
     event.preventDefault();
     clearAuthFeedback();
@@ -542,7 +659,7 @@ function handleLoginSubmit(event) {
     const matchedUser = users.find((user) => user.email === email && user.password === password);
 
     if (!matchedUser) {
-        showAuthFeedback("Invalid email or password. Try demo@deploytrack.com / demo1234", "error");
+        showAuthFeedback("Invalid email or password. Try demo@deploytrack.com / demo1234 or sakshamxiia1424@gmail.com / Qwertyui@12", "error");
         return;
     }
 
@@ -646,6 +763,11 @@ deploymentList.addEventListener("click", (event) => {
 
 deploymentFilterForm.addEventListener("input", loadFilteredDeployments);
 deploymentFilterForm.addEventListener("change", loadFilteredDeployments);
+pipelineTriggerButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+        triggerPipeline(button.dataset.pipelineTemplate);
+    });
+});
 
 deploymentForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -666,20 +788,7 @@ deploymentForm.addEventListener("submit", async (event) => {
     };
 
     try {
-        const response = await fetch("/api/deployments", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || "Unable to save deployment.");
-        }
-
+        await postDeployment(payload);
         deploymentForm.reset();
         deploymentForm.elements.project.value = "Deploy Track";
         deploymentForm.elements.branch.value = "main";

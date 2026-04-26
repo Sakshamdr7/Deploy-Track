@@ -68,6 +68,10 @@ function normalizeDeploymentPayload(body) {
         duration: Number(body.duration) > 0 ? Number(body.duration) : null,
         logs: String(body.logs || "").trim(),
         source: String(body.source || "dashboard").trim() || "dashboard",
+        pipelineRunId: String(body.pipelineRunId || "").trim() || null,
+        workflowName: String(body.workflowName || "").trim() || null,
+        jobName: String(body.jobName || "").trim() || null,
+        pipelineRunUrl: String(body.pipelineRunUrl || "").trim() || null,
     };
 }
 
@@ -134,6 +138,9 @@ function applyDeploymentFilters(deployments, query = {}) {
             deployment.commitHash,
             deployment.author,
             deployment.logs,
+            deployment.pipelineRunId,
+            deployment.workflowName,
+            deployment.jobName,
         ]
             .filter(Boolean)
             .join(" ")

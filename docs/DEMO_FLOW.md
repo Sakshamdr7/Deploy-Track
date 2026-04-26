@@ -4,7 +4,7 @@ Use this flow for a 5-8 minute project presentation.
 
 ## 1) Start and Login (30-45 sec)
 
-- Open `http://localhost:5000`
+- Open `http://localhost:1945`
 - Show login gate
 - Login with:
   - `demo@deploytrack.com`

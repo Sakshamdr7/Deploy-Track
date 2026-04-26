@@ -232,6 +232,17 @@
 
                         <div id="feedback" class="feedback" hidden></div>
 
+                        <section class="pipeline-simulator">
+                            <p class="section-kicker">CI/CD Simulator</p>
+                            <h3>Trigger Automated Pipeline</h3>
+                            <p class="panel-copy">Use one-click actions to simulate automated build, test, and deploy flow.</p>
+                            <div class="pipeline-actions">
+                                <button type="button" class="ghost-button secondary-button pipeline-trigger" data-pipeline-template="staging-success">Run Staging Pipeline</button>
+                                <button type="button" class="ghost-button secondary-button pipeline-trigger" data-pipeline-template="production-success">Run Production Pipeline</button>
+                                <button type="button" class="ghost-button secondary-button pipeline-trigger" data-pipeline-template="production-failed">Run Failed Production Pipeline</button>
+                            </div>
+                        </section>
+
                         <form id="deployment-form" class="deployment-form">
                             <label>
                                 <span>Project / Website</span>
@@ -396,7 +407,14 @@
                             <section class="about-block">
                                 <h3>Tech Stack</h3>
                                 <p>
-                                    Frontend uses HTML, CSS, and JavaScript. Backend uses Node.js and Express. Current persistence is JSON-based local storage, with CI handled through GitHub Actions.
+                                    Frontend uses HTML, CSS, and JavaScript. Backend uses Node.js and Express. Current persistence is JSON-based local storage, with a built-in CI pipeline simulator for demo-ready automation flows.
+                                </p>
+                            </section>
+
+                            <section class="about-block">
+                                <h3>Pipeline Stages</h3>
+                                <p>
+                                    Simulated CI/CD pipeline stages follow Build, Test, Deploy, and Verify. Each triggered run is saved as a deployment event with workflow metadata and run identifiers.
                                 </p>
                             </section>
 

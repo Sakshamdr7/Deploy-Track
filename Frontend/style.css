@@ -407,6 +407,29 @@ body.nav-open .nav-drawer {
     background: var(--panel-soft);
 }
 
+.pipeline-simulator {
+    margin-bottom: 18px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--panel-soft);
+}
+
+.pipeline-simulator h3 {
+    margin-bottom: 6px;
+}
+
+.pipeline-actions {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.pipeline-trigger {
+    min-width: 0;
+}
+
 .deployment-form label,
 .filter-toolbar label {
     display: block;
@@ -717,6 +740,10 @@ html[data-theme="dark"] .feedback.error {
 
     .filter-toolbar {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .pipeline-actions {
+        grid-template-columns: 1fr;
     }
 }
 
