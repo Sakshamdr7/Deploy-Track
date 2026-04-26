@@ -143,6 +143,10 @@ h3 {
     gap: 14px;
 }
 
+.auth-form[hidden] {
+    display: none;
+}
+
 .auth-form label {
     display: block;
 }
